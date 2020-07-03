@@ -6,6 +6,7 @@
 #define OLED_RESET 	-1 // This display does not have a reset pin accessible
 
 
+//test
 #define RIGHT_TAPE_SENSOR PA5 //ANALOG
 #define LEFT_TAPE_SENSOR PA4 //ANALOG
 
