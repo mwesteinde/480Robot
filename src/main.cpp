@@ -5,19 +5,20 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET 	-1 // This display does not have a reset pin accessible
 
+
 #define RIGHT_TAPE_SENSOR PA5 //ANALOG
 #define LEFT_TAPE_SENSOR PA4 //ANALOG
 
-#define TAPE_SENSOR_THRESHOLD PA0 //ANALOG
+#define TAPE_SENSOR_POT PA0 //ANALOG
 
-#define SPEED_SENSOR PA3 //ANALOG
-#define DISPLAY_BUTTON PA2 //DIGITAL
+#define CORRECTING_SPEED_POT PB0 //ANALOG
+#define DISPLAY_BUTTON PA3 //DIGITAL
 
 #define RIGHT_MOTOR_FORWARD PB_9 //PWM
-#define RIGHT_MOTOR_REVERSE PA_11 //PWM
+#define RIGHT_MOTOR_REVERSE PA_1 //PWM
 
 #define LEFT_MOTOR_FORWARD PB_8 //PWM
-#define LEFT_MOTOR_REVERSE PA_8 //PWM
+#define LEFT_MOTOR_REVERSE PA_2 //PWM
 
 #define RIGHT 0
 #define LEFT 1
@@ -93,7 +94,7 @@ void loop() {
     printMessage(analogRead(LEFT_TAPE_SENSOR), false);
     printMessage("   ", false);
     printMessage(leftReflectance, true);
-    printMessage(analogRead(SPEED_SENSOR), false);
+    printMessage(analogRead(CORRECTING_SPEED_POT), false);
     printMessage("   ", false);
     printMessage(correctingSpeed *100 / 512, true);
     display.display();
@@ -101,7 +102,7 @@ void loop() {
 }
 
 void readCorrectionSpeed(){
-  correctingSpeed = map(analogRead(SPEED_SENSOR), 0, 1023, 0, FULL_SPEED);
+  correctingSpeed = map(analogRead(CORRECTING_SPEED_POT), 0, 1023, 0, FULL_SPEED);
 }
 
 void correctDirection(){
@@ -151,7 +152,7 @@ void refreshDisplay(){
 }
 
 void readTapeSensors(){
-  tapeSensorThreahold = analogRead(TAPE_SENSOR_THRESHOLD);
+  tapeSensorThreahold = analogRead(TAPE_SENSOR_POT);
 
   rightReflectance = analogRead(RIGHT_TAPE_SENSOR) > tapeSensorThreahold;
   leftReflectance = analogRead(LEFT_TAPE_SENSOR) > tapeSensorThreahold;
