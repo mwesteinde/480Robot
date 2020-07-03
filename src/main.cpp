@@ -50,7 +50,7 @@ bool rightReflectance;
 bool leftReflectance;
 unsigned int tapeSensorThreahold;
 
-int lastSideOnTape = LEFT;
+int lastSideOnTape = RIGHT;
 
 unsigned int correctingSpeed;
 
@@ -106,29 +106,32 @@ void readCorrectionSpeed(){
 }
 
 void correctDirection(){
-  //refreshDisplay();
   if(rightReflectance && leftReflectance){
-    driveStraight(FULL_SPEED);
-    //printMessage("Straight");
+    driveStraight(correctingSpeed);
+    //printMessage("Straight", true);
   }
   else if (rightReflectance){
     turn(RIGHT);
     //turnWithReverse(RIGHT);
-    //printMessage("turn right");
+    //printMessage("Turn Right", true);
   }
   else if (leftReflectance){
     turn(LEFT);
     //turnWithReverse(LEFT);
-    //printMessage("Turn LEft");
+    //printMessage("Turn Left", true);
   }
   else{
     turnWithReverse(lastSideOnTape);
     //turn(lastSideOnTape);
     // printMessage("OFF");
     // refreshDisplay();
-    // printMessage(lastSideOnTape, true);
-    // display.display();
+    //printMessage(leftReflectance, false);
+    //printMessage(rightReflectance, false);
+    //printMessage("W/ Reverse", false);
+    //printMessage(lastSideOnTape, true);
+    
   }
+  //display.display();
 }
 
 void printMessage(int message, bool newline){
@@ -152,6 +155,7 @@ void refreshDisplay(){
 }
 
 void readTapeSensors(){
+  //refreshDisplay();
   tapeSensorThreahold = analogRead(TAPE_SENSOR_POT);
 
   rightReflectance = analogRead(RIGHT_TAPE_SENSOR) > tapeSensorThreahold;
@@ -159,9 +163,12 @@ void readTapeSensors(){
 
   if (rightReflectance && !leftReflectance){
     lastSideOnTape = RIGHT;
+    
+    //printMessage("Right Last", true);
   }
   else if (leftReflectance && !rightReflectance){
     lastSideOnTape = LEFT;
+    //printMessage("Left Last", true);
   }
 }
 
