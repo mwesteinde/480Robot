@@ -4,7 +4,7 @@
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET 	-1 // This display does not have a reset pin accessible
-
+#define GITTEST 1
 
 #define RIGHT_TAPE_SENSOR PA5 //ANALOG
 #define LEFT_TAPE_SENSOR PA4 //ANALOG
