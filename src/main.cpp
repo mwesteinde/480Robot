@@ -5,25 +5,30 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET 	-1 // This display does not have a reset pin accessible
 
-
-#define RIGHT_TAPE_SENSOR PA5 //ANALOG
-#define LEFT_TAPE_SENSOR PA4 //ANALOG
-
-#define TAPE_SENSOR_POT PA0 //ANALOG
-
+#define ROTOR_SPEED_POT PB1 //ANALOG
 #define CORRECTING_SPEED_POT PB0 //ANALOG
-#define DISPLAY_BUTTON PA3 //DIGITAL
 
-#define RIGHT_MOTOR_FORWARD PB_9 //PWM
-#define RIGHT_MOTOR_REVERSE PA_1 //PWM
+#define COMBINE_MOTOR_FORWARD PA_7 //PWM
+#define COMBINE_MOTOR_REVERSE PA_6 //PWM
 
-#define LEFT_MOTOR_FORWARD PB_8 //PWM
-#define LEFT_MOTOR_REVERSE PA_2 //PWM
+#define TAPE_SENSOR_POT PA5 //ANALOG
+#define DISPLAY_BUTTON PA4 //DIGITAL
+
+#define LEFT_TAPE_SENSOR PA3 //ANALOG
+#define RIGHT_TAPE_SENSOR PA2 //ANALOG
+
+#define LEFT_MOTOR_FORWARD PA_1 //PWM
+#define RIGHT_MOTOR_FORWARD PA_0 //PWM
+
+#define REAR_SERVO PA_8 //PWM  //TODO: *Check the underscore in the pin name*
+
+#define LEFT_MOTOR_REVERSE PB_8 //PWM
+#define RIGHT_MOTOR_REVERSE PB_9 //PWM
 
 #define RIGHT 0
 #define LEFT 1
 
-#define PWM_FREQUENCY 1000
+#define PWM_FREQUENCY 1000 //TODO: change this
 
 #define STOP 0
 #define FULL_SPEED 512
@@ -35,6 +40,7 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+void displayInfo();
 void readCorrectionSpeed();
 void correctDirection();
 void printMessage(int, bool);
@@ -53,6 +59,7 @@ unsigned int tapeSensorThreahold;
 int lastSideOnTape = RIGHT;
 
 unsigned int correctingSpeed;
+unsigned int driveSpeed;
 
 
 void setup() {
@@ -78,14 +85,22 @@ void setup() {
   }
 
 void loop() {
+  driveSpeed = map(analogRead(ROTOR_SPEED_POT), 0, 1023, 0, FULL_SPEED);
   readCorrectionSpeed();
   readTapeSensors();
+
   if (digitalRead(DISPLAY_BUTTON))
   {
     correctDirection();
   }
   else{
     driveStraight(STOP);
+    displayInfo();
+  }
+  
+}
+
+void displayInfo(){
     refreshDisplay();
     printMessage(tapeSensorThreahold, true);
     printMessage(analogRead(RIGHT_TAPE_SENSOR), false);
@@ -98,7 +113,6 @@ void loop() {
     printMessage("   ", false);
     printMessage(correctingSpeed *100 / 512, true);
     display.display();
-  }
 }
 
 void readCorrectionSpeed(){
@@ -106,8 +120,9 @@ void readCorrectionSpeed(){
 }
 
 void correctDirection(){
+  //refreshDisplay();
   if(rightReflectance && leftReflectance){
-    driveStraight(correctingSpeed);
+    driveStraight(driveSpeed);
     //printMessage("Straight", true);
   }
   else if (rightReflectance){
@@ -123,7 +138,7 @@ void correctDirection(){
   else{
     turnWithReverse(lastSideOnTape);
     //turn(lastSideOnTape);
-    // printMessage("OFF");
+    //printMessage("OFF", true);
     // refreshDisplay();
     //printMessage(leftReflectance, false);
     //printMessage(rightReflectance, false);
