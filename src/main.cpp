@@ -5,8 +5,6 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET 	-1 // This display does not have a reset pin accessible
 
-//TEST
-
 #define DRIVE_SPEED_POT PB1 //ANALOG
 #define CORRECTING_SPEED_POT PB0 //ANALOG
 
