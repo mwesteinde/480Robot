@@ -1,12 +1,13 @@
 #include <Wire.h>
 #include <Adafruit_SSD1306.h>
+#include <algorithm>    // std::sort
+#include <vector>       // std::vector
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET 	-1 // This display does not have a reset pin accessible
-#define GITTEST 1
 
-#define RIGHT_TAPE_SENSOR PA5 //ANALOG
+#define RIGHT_TAPE_SENSOR PA5//ANALOG
 #define LEFT_TAPE_SENSOR PA4 //ANALOG
 
 #define TAPE_SENSOR_POT PA0 //ANALOG
@@ -27,10 +28,11 @@
 
 #define STOP 0
 #define FULL_SPEED 512
-#define REVERSE_SPEED 512*0.35
+#define REVERSE_SPEED 512*0.75
 
 #define FORWARD 1
 #define REVERSE 0
+
 
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -49,7 +51,11 @@ void driveMotor(int, int, int);
 bool rightReflectance;
 bool leftReflectance;
 unsigned int tapeSensorThreahold;
-
+unsigned int surface;
+unsigned int tape;
+double lasterror;
+double kd;
+double kp;
 int lastSideOnTape = RIGHT;
 
 unsigned int correctingSpeed;
@@ -59,7 +65,6 @@ void setup() {
   // initialize LED digital pin as an output and set on
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-  //test
 
   pinMode(RIGHT_MOTOR_FORWARD, OUTPUT);
   pinMode(RIGHT_MOTOR_REVERSE, OUTPUT);
@@ -71,7 +76,7 @@ void setup() {
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.display();
-
+  delay(2000);
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
@@ -79,8 +84,11 @@ void setup() {
   }
 
 void loop() {
+  
+
   readCorrectionSpeed();
   readTapeSensors();
+  printf("speed %d\nrighttape %d\nlefttape %d\n", correctingSpeed*100/512, rightReflectance, leftReflectance);
   if (digitalRead(DISPLAY_BUTTON))
   {
     correctDirection();
@@ -106,19 +114,62 @@ void readCorrectionSpeed(){
   correctingSpeed = map(analogRead(CORRECTING_SPEED_POT), 0, 1023, 0, FULL_SPEED);
 }
 
+void correctDirectionPD(){
+    kp = map(analogRead(TAPE_SENSOR_POT),0,1023,0,1);
+    int error = tapeSensorThreahold - analogRead(RIGHT_TAPE_SENSOR)- analogRead(LEFT_TAPE_SENSOR);
+    int adjustment = error*kp + (lasterror-error)*kd;
+
+    lasterror = error;
+
+    driveMotor(RIGHT,constrain(correctingSpeed + adjustment, 0, FULL_SPEED) , FORWARD);
+    driveMotor(LEFT, constrain(correctingSpeed - adjustment,0, FULL_SPEED), FORWARD);
+}
+// MOVE ROBOT SIDE TO SIDE OVER TAPE AT START TO GET GOOD VALUES
+//
+// creates a range of values that varies between surface and tape values due to addition of sensors.
+// Hope low 100 are all on surface and high 100 are all on tape. 
+// Creates tape sensor threshold which is the middle values between tape and surface. 
+// Robot will follow tape with one sensor on and one sensor off
+
+void callibrate(){
+  int size = 1000;
+  int sensor = 0;
+  int sensorArray[size] = {};
+  for(int i=0; i<size; i++){
+    sensorArray[i] = analogRead(RIGHT_TAPE_SENSOR)+analogRead(LEFT_TAPE_SENSOR);
+  }
+  std::vector<int> sensorVector (sensorArray,sensorArray+size);
+  std::sort (sensorVector.begin(),sensorVector.begin()+size);
+  int surfaceArray[100] = {};
+  int tapeArray[100] = {};
+  std::copy(sensorVector.begin(), sensorVector.begin()+100, surfaceArray);
+  std::copy(sensorVector.end()-100, sensorVector.end(), tapeArray);
+
+  int surfacesum = 0;
+  int tapesum = 0;
+  for(int j = 0; j<100; j++){
+     surfacesum += surfaceArray[j];
+     tapesum += tapeArray[j];
+  }
+
+  tape = tapesum / 100;
+  surface = surfacesum / 100; 
+  tapeSensorThreahold = (surface + tape)/2; 
+}
+
+
 void correctDirection(){
   if(rightReflectance && leftReflectance){
     driveStraight(correctingSpeed);
     //printMessage("Straight", true);
   }
   else if (rightReflectance){
-    turn(RIGHT);
-    //turnWithReverse(RIGHT);
+    
+    turnWithReverse(RIGHT);
     //printMessage("Turn Right", true);
   }
   else if (leftReflectance){
-    turn(LEFT);
-    //turnWithReverse(LEFT);
+    turnWithReverse(LEFT);
     //printMessage("Turn Left", true);
   }
   else{
@@ -161,6 +212,7 @@ void readTapeSensors(){
 
   rightReflectance = analogRead(RIGHT_TAPE_SENSOR) > tapeSensorThreahold;
   leftReflectance = analogRead(LEFT_TAPE_SENSOR) > tapeSensorThreahold;
+  //printf("Threshhold %d\n Left %d\n right %d", tapeSensorThreahold,leftReflectance,rightReflectance);
 
   if (rightReflectance && !leftReflectance){
     lastSideOnTape = RIGHT;
