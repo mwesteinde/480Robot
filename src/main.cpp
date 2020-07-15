@@ -5,11 +5,11 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET 	-1 // This display does not have a reset pin accessible
 
-#define ROTOR_SPEED_POT PB1 //ANALOG
+#define DRIVE_SPEED_POT PB1 //ANALOG
 #define CORRECTING_SPEED_POT PB0 //ANALOG
 
-#define COMBINE_MOTOR_FORWARD PA_7 //PWM
-#define COMBINE_MOTOR_REVERSE PA_6 //PWM
+#define ROTOR_MOTOR_FORWARD PA_7 //PWM
+#define ROTOR_MOTOR_REVERSE PA_6 //PWM
 
 #define TAPE_SENSOR_POT PA5 //ANALOG
 #define DISPLAY_BUTTON PA4 //DIGITAL
@@ -28,11 +28,11 @@
 #define RIGHT 0
 #define LEFT 1
 
-#define PWM_FREQUENCY 1000 //TODO: change this
+#define PWM_FREQUENCY 1000
 
 #define STOP 0
 #define FULL_SPEED 512
-#define REVERSE_SPEED 512*0.35
+#define ROTOR_SPEED 512 * 0.5
 
 #define FORWARD 1
 #define REVERSE 0
@@ -51,6 +51,7 @@ void turn(int);
 void turnWithReverse(int);
 void driveStraight(int);
 void driveMotor(int, int, int);
+void turnRotor(int, int);
 
 bool rightReflectance;
 bool leftReflectance;
@@ -85,13 +86,14 @@ void setup() {
   }
 
 void loop() {
-  driveSpeed = map(analogRead(ROTOR_SPEED_POT), 0, 1023, 0, FULL_SPEED);
+  driveSpeed = map(analogRead(DRIVE_SPEED_POT), 0, 1023, 0, FULL_SPEED);
   readCorrectionSpeed();
   readTapeSensors();
 
   if (digitalRead(DISPLAY_BUTTON))
   {
     correctDirection();
+    turnRotor(ROTOR_SPEED, FORWARD);
   }
   else{
     driveStraight(STOP);
@@ -120,33 +122,18 @@ void readCorrectionSpeed(){
 }
 
 void correctDirection(){
-  //refreshDisplay();
   if(rightReflectance && leftReflectance){
     driveStraight(driveSpeed);
-    //printMessage("Straight", true);
   }
   else if (rightReflectance){
     turn(RIGHT);
-    //turnWithReverse(RIGHT);
-    //printMessage("Turn Right", true);
   }
   else if (leftReflectance){
     turn(LEFT);
-    //turnWithReverse(LEFT);
-    //printMessage("Turn Left", true);
   }
   else{
-    turnWithReverse(lastSideOnTape);
-    //turn(lastSideOnTape);
-    //printMessage("OFF", true);
-    // refreshDisplay();
-    //printMessage(leftReflectance, false);
-    //printMessage(rightReflectance, false);
-    //printMessage("W/ Reverse", false);
-    //printMessage(lastSideOnTape, true);
-    
+    turnWithReverse(lastSideOnTape);    
   }
-  //display.display();
 }
 
 void printMessage(int message, bool newline){
@@ -170,7 +157,6 @@ void refreshDisplay(){
 }
 
 void readTapeSensors(){
-  //refreshDisplay();
   tapeSensorThreahold = analogRead(TAPE_SENSOR_POT);
 
   rightReflectance = analogRead(RIGHT_TAPE_SENSOR) > tapeSensorThreahold;
@@ -178,12 +164,9 @@ void readTapeSensors(){
 
   if (rightReflectance && !leftReflectance){
     lastSideOnTape = RIGHT;
-    
-    //printMessage("Right Last", true);
   }
   else if (leftReflectance && !rightReflectance){
     lastSideOnTape = LEFT;
-    //printMessage("Left Last", true);
   }
 }
 
@@ -201,11 +184,11 @@ void turn(int side){
 void turnWithReverse(int side){
   if (side == RIGHT) {
     driveMotor(LEFT, correctingSpeed, FORWARD);
-    driveMotor(RIGHT, REVERSE_SPEED, REVERSE);
+    driveMotor(RIGHT, correctingSpeed, REVERSE);
   }
   else if (side == LEFT) {
     driveMotor(RIGHT, correctingSpeed, FORWARD);
-    driveMotor(LEFT, REVERSE_SPEED, REVERSE);
+    driveMotor(LEFT, correctingSpeed, REVERSE);
   }
 }
 
@@ -221,9 +204,6 @@ void driveMotor(int motorSide, int speed, int direction){
       pwm_start(RIGHT_MOTOR_FORWARD, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
     }
     else if (direction == REVERSE){
-      // refreshDisplay();
-      // printMessage("Right Reverse", true);
-      // display.display();
       pwm_start(RIGHT_MOTOR_FORWARD, PWM_FREQUENCY, 0, RESOLUTION_9B_COMPARE_FORMAT);
       pwm_start(RIGHT_MOTOR_REVERSE, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
     }
@@ -234,11 +214,19 @@ void driveMotor(int motorSide, int speed, int direction){
       pwm_start(LEFT_MOTOR_FORWARD, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
     }
     else if (direction == REVERSE){
-      // refreshDisplay();
-      // printMessage("Left Reverse", true);
-      // display.display();
       pwm_start(LEFT_MOTOR_FORWARD, PWM_FREQUENCY, 0, RESOLUTION_9B_COMPARE_FORMAT);
       pwm_start(LEFT_MOTOR_REVERSE, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
     }
+  }
+}
+
+void turnRotor(int speed, int direction){
+  if (direction == FORWARD){
+    pwm_start(ROTOR_MOTOR_REVERSE, PWM_FREQUENCY, 0, RESOLUTION_9B_COMPARE_FORMAT);
+    pwm_start(ROTOR_MOTOR_FORWARD, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
+  }
+  else if (direction == REVERSE){
+    pwm_start(ROTOR_MOTOR_FORWARD, PWM_FREQUENCY, 0, RESOLUTION_9B_COMPARE_FORMAT);
+    pwm_start(ROTOR_MOTOR_FORWARD, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
   }
 }
