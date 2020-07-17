@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include <Adafruit_SSD1306.h>
+#include <Servo.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -20,7 +21,7 @@
 #define LEFT_MOTOR_FORWARD PA_1 //PWM
 #define RIGHT_MOTOR_FORWARD PA_0 //PWM
 
-#define REAR_SERVO PA_8 //PWM  //TODO: *Check the underscore in the pin name*
+#define REAR_SERVO PA8 //PWM
 
 #define LEFT_MOTOR_REVERSE PB_8 //PWM
 #define RIGHT_MOTOR_REVERSE PB_9 //PWM
@@ -37,9 +38,14 @@
 #define FORWARD 1
 #define REVERSE 0
 
+Servo rearServo;
+#define UP_ANGLE 90
+#define DOWN_ANGLE 0
+
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+void countDown();
 void displayInfo();
 void readCorrectionSpeed();
 void correctDirection();
@@ -76,13 +82,16 @@ void setup() {
 
   pinMode(DISPLAY_BUTTON, INPUT_PULLUP);
 
+  rearServo.attach(REAR_SERVO);
+  rearServo.write(UP_ANGLE);
+
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.display();
+  refreshDisplay();
 
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0,0);
+  countDown();
+  rearServo.write(DOWN_ANGLE);
+  delay(1000);
   }
 
 void loop() {
@@ -100,6 +109,21 @@ void loop() {
     displayInfo();
   }
   
+}
+
+void countDown(){
+  refreshDisplay();
+  printMessage("3", true);
+  display.display();
+  delay(1000);
+  printMessage("2", true);
+  display.display();
+  delay(1000);
+  printMessage("1", true);
+  display.display();
+  delay(1000);
+  printMessage("Starting", true);
+  display.display();
 }
 
 void displayInfo(){
