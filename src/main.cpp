@@ -1,6 +1,5 @@
 #include <Wire.h>
 #include <Adafruit_SSD1306.h>
-#include <Servo.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -21,7 +20,7 @@
 #define LEFT_MOTOR_FORWARD PA_1 //PWM
 #define RIGHT_MOTOR_FORWARD PA_0 //PWM
 
-#define REAR_SERVO PA8 //PWM
+#define REAR_SERVO PA_8 //PWM
 
 #define LEFT_MOTOR_REVERSE PB_8 //PWM
 #define RIGHT_MOTOR_REVERSE PB_9 //PWM
@@ -38,13 +37,15 @@
 #define FORWARD 1
 #define REVERSE 0
 
-Servo rearServo;
 #define UP_ANGLE 90
-#define DOWN_ANGLE 0
+#define DOWN_ANGLE 38
 
+#define COUNTER_THRESHOLD 30000
+#define COUNTER_WAIT_AMOUNT 3000
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+void moveServo(int);
 void countDown();
 void displayInfo();
 void readCorrectionSpeed();
@@ -68,7 +69,6 @@ int lastSideOnTape = RIGHT;
 unsigned int correctingSpeed;
 unsigned int driveSpeed;
 
-
 void setup() {
   // initialize LED digital pin as an output and set on
   pinMode(LED_BUILTIN, OUTPUT);
@@ -82,15 +82,15 @@ void setup() {
 
   pinMode(DISPLAY_BUTTON, INPUT_PULLUP);
 
-  rearServo.attach(REAR_SERVO);
-  rearServo.write(UP_ANGLE);
+  moveServo(UP_ANGLE);
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.display();
   refreshDisplay();
 
+  
   countDown();
-  rearServo.write(DOWN_ANGLE);
+  moveServo(DOWN_ANGLE);
   delay(1000);
   }
 
@@ -99,16 +99,21 @@ void loop() {
   readCorrectionSpeed();
   readTapeSensors();
 
-  if (digitalRead(DISPLAY_BUTTON))
-  {
+  if (digitalRead(DISPLAY_BUTTON)){
     correctDirection();
     turnRotor(ROTOR_SPEED, FORWARD);
+
   }
   else{
     driveStraight(STOP);
     displayInfo();
   }
   
+}
+
+void moveServo(int angle){
+  int angleInMicroseconds = map(angle, 0, 180, 500, 2500);
+  pwm_start(REAR_SERVO, 50, angleInMicroseconds, TimerCompareFormat_t::MICROSEC_COMPARE_FORMAT);
 }
 
 void countDown(){
@@ -224,21 +229,21 @@ void driveStraight(int speed){
 void driveMotor(int motorSide, int speed, int direction){
   if (motorSide == RIGHT) {
     if (direction == FORWARD) {
-      pwm_start(RIGHT_MOTOR_REVERSE, PWM_FREQUENCY, 0, RESOLUTION_9B_COMPARE_FORMAT);
+      pwm_start(RIGHT_MOTOR_REVERSE, PWM_FREQUENCY, STOP, RESOLUTION_9B_COMPARE_FORMAT);
       pwm_start(RIGHT_MOTOR_FORWARD, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
     }
     else if (direction == REVERSE){
-      pwm_start(RIGHT_MOTOR_FORWARD, PWM_FREQUENCY, 0, RESOLUTION_9B_COMPARE_FORMAT);
+      pwm_start(RIGHT_MOTOR_FORWARD, PWM_FREQUENCY, STOP, RESOLUTION_9B_COMPARE_FORMAT);
       pwm_start(RIGHT_MOTOR_REVERSE, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
     }
   }
   else if (motorSide == LEFT) {
     if (direction == FORWARD) {
-      pwm_start(LEFT_MOTOR_REVERSE, PWM_FREQUENCY, 0, RESOLUTION_9B_COMPARE_FORMAT);
+      pwm_start(LEFT_MOTOR_REVERSE, PWM_FREQUENCY, STOP, RESOLUTION_9B_COMPARE_FORMAT);
       pwm_start(LEFT_MOTOR_FORWARD, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
     }
     else if (direction == REVERSE){
-      pwm_start(LEFT_MOTOR_FORWARD, PWM_FREQUENCY, 0, RESOLUTION_9B_COMPARE_FORMAT);
+      pwm_start(LEFT_MOTOR_FORWARD, PWM_FREQUENCY, STOP, RESOLUTION_9B_COMPARE_FORMAT);
       pwm_start(LEFT_MOTOR_REVERSE, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
     }
   }
@@ -246,11 +251,11 @@ void driveMotor(int motorSide, int speed, int direction){
 
 void turnRotor(int speed, int direction){
   if (direction == FORWARD){
-    pwm_start(ROTOR_MOTOR_REVERSE, PWM_FREQUENCY, 0, RESOLUTION_9B_COMPARE_FORMAT);
+    pwm_start(ROTOR_MOTOR_REVERSE, PWM_FREQUENCY, STOP, RESOLUTION_9B_COMPARE_FORMAT);
     pwm_start(ROTOR_MOTOR_FORWARD, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
   }
   else if (direction == REVERSE){
-    pwm_start(ROTOR_MOTOR_FORWARD, PWM_FREQUENCY, 0, RESOLUTION_9B_COMPARE_FORMAT);
+    pwm_start(ROTOR_MOTOR_FORWARD, PWM_FREQUENCY, STOP, RESOLUTION_9B_COMPARE_FORMAT);
     pwm_start(ROTOR_MOTOR_FORWARD, PWM_FREQUENCY, speed, RESOLUTION_9B_COMPARE_FORMAT);
   }
 }
