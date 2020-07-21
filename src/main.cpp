@@ -7,19 +7,28 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET 	-1 // This display does not have a reset pin accessible
 
-#define RIGHT_TAPE_SENSOR PA4//ANALOG
-#define LEFT_TAPE_SENSOR PA5 //ANALOG
-
-#define TAPE_SENSOR_POT PA0 //ANALOG
-
+#define ROTOR_SPEED_POT PB1 //ANALOG
 #define CORRECTING_SPEED_POT PB0 //ANALOG
-#define DISPLAY_BUTTON PA3 //DIGITAL
 
-#define RIGHT_MOTOR_FORWARD PB_8 //PWM
-#define RIGHT_MOTOR_REVERSE PA_2 //PWM
+#define COMBINE_MOTOR_FORWARD PA_7 //PWM
+#define COMBINE_MOTOR_REVERSE PA_6 //PWM
 
-#define LEFT_MOTOR_FORWARD PB_9 //PWM
-#define LEFT_MOTOR_REVERSE PA_1 //PWM
+#define TAPE_SENSOR_POT PA5 //ANALOG
+#define DISPLAY_BUTTON PA4 //DIGITAL
+
+#define LEFT_TAPE_SENSOR PA3 //ANALOG
+#define RIGHT_TAPE_SENSOR PA2 //ANALOG
+
+#define LEFT_MOTOR_FORWARD PA_1 //PWM
+#define RIGHT_MOTOR_FORWARD PA_0 //PWM
+
+#define REAR_SERVO PA_8 //PWM  //TODO: *Check the underscore in the pin name*
+
+#define LEFT_MOTOR_REVERSE PB_8 //PWM
+#define RIGHT_MOTOR_REVERSE PB_9 //PWM
+
+#define RIGHT 0
+#define LEFT 1
 
 #define RIGHT 0
 #define LEFT 1
@@ -28,7 +37,7 @@
 
 #define STOP 0
 #define FULL_SPEED 512
-#define REVERSE_SPEED 512*0.35
+#define REVERSE_SPEED 512
 
 #define FORWARD 1
 #define REVERSE 0
@@ -49,6 +58,9 @@ void driveStraight(int);
 void driveMotor(int, int, int);
 void callibrate();
 void correctDirectionPD();
+void test();
+void readSpeeds();
+void blink();
 
 bool rightReflectance;
 bool leftReflectance;
@@ -62,6 +74,7 @@ int lastSideOnTape = RIGHT;
 bool startup;
 
 unsigned int correctingSpeed;
+unsigned int driveSpeed;
 
 
 void setup() {
@@ -74,37 +87,43 @@ void setup() {
 
   pinMode(LEFT_MOTOR_FORWARD, OUTPUT);
   pinMode(LEFT_MOTOR_REVERSE, OUTPUT);
+  
+  pinMode(COMBINE_MOTOR_FORWARD, OUTPUT);
 
   pinMode(DISPLAY_BUTTON, INPUT_PULLUP);
 
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  display.display();
+  //display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  //display.display();
   delay(2000);
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0,0);
+  // display.clearDisplay();
+  // display.setTextSize(2);
+  // display.setTextColor(SSD1306_WHITE);
+  // display.setCursor(0,0);
   startup = true;
 
   }
 
 void loop() {
   
-  // if(startup){
-  //   delay(2000);
-  //  // callibrate();
-  //   startup = false;
-  //   printf("DONE CALLIBRATION\n TAPE IS: %d\n SURFACE IS: %d\n", tape, surface);
-  //   delay(10000);
-  // }
+  
+
+  if(startup){
+    blink();
+    callibrate();
+    blink();
+    test();
+    startup = false;
+    printf("DONE CALLIBRATION\n TAPE IS: %d\n SURFACE IS: %d\n", tape, surface);
+  }
   // //correctDirectionPD();  
-  readCorrectionSpeed();
+  readSpeeds();
   readTapeSensors();
   //  correctDirectionPD();
   printf("speed %d\nrighttape %d\nlefttape %d\n", correctingSpeed*100/512, rightReflectance, leftReflectance);
   if (digitalRead(DISPLAY_BUTTON))
   {
     correctDirection();
+    pwm_start(COMBINE_MOTOR_FORWARD, PWM_FREQUENCY, driveSpeed/5, RESOLUTION_9B_COMPARE_FORMAT);
   
   }
   else{
@@ -124,6 +143,30 @@ void loop() {
   }
 }
 
+void test(){
+  
+  readSpeeds();
+  driveMotor(RIGHT,correctingSpeed,FORWARD);
+  digitalWrite(LED_BUILTIN,HIGH);
+  delay(2000);
+  driveMotor(RIGHT,driveSpeed,REVERSE);
+  digitalWrite(LED_BUILTIN,0);
+  delay(2000);
+  driveMotor(LEFT,correctingSpeed,FORWARD);
+  digitalWrite(LED_BUILTIN,HIGH);
+  delay(2000);
+  driveMotor(LEFT,driveSpeed,REVERSE);
+  digitalWrite(LED_BUILTIN,0);
+  delay(2000);
+  blink();
+  delay(5000);
+
+}
+void readSpeeds(){
+  readCorrectionSpeed();
+  driveSpeed = map(analogRead(ROTOR_SPEED_POT), 0, 1023, 0, FULL_SPEED);
+}
+
 void readCorrectionSpeed(){
   correctingSpeed = map(analogRead(CORRECTING_SPEED_POT), 0, 1023, 0, FULL_SPEED);
 }
@@ -135,10 +178,15 @@ void readCorrectionSpeed(){
 // Creates tape sensor threshold which is the middle values between tape and surface. 
 // Robot will follow tape with one sensor on and one sensor off
 void callibrate(){
-  int size = 3000;
+  int size = 5000;
   int sensorArray[size] = {};
   int temp = 0;
   for(int i=0; i<size; i++){
+    if(i == size / 2){
+      blink();
+      blink();
+      delay(5000);
+    }
     sensorArray[i] = analogRead(RIGHT_TAPE_SENSOR)+analogRead(LEFT_TAPE_SENSOR);
    // printf("Sensor val: %d", sensorArray[i]);
   }
@@ -155,7 +203,6 @@ void callibrate(){
 		}
     //printf("sorting....");
 	}
-  
   //printf("sorted");
   //delay(1000);
   int surfacesum = 0;
@@ -168,8 +215,20 @@ void callibrate(){
 
   tape = tapesum / 100;
   surface = surfacesum / 100; 
+  //normalize threshhold for one sensor
+  tapeSensorThreahold = (tape - surface) /4 + surface/2;
   //printf("tape: %d\n Surface: %d\n", tape, surface);
   
+}
+
+void blink(){
+  for(int i = 0; i<5; i++){
+    digitalWrite(LED_BUILTIN,HIGH);
+    delay(100);
+    digitalWrite(LED_BUILTIN,0);
+    delay(100);
+
+  }
 }
 
 void correctDirectionPD(){
@@ -199,20 +258,23 @@ void correctDirectionPD(){
 
 void correctDirection(){
   if(rightReflectance && leftReflectance){
-    driveStraight(correctingSpeed);
+    digitalWrite(LED_BUILTIN,HIGH);
+    driveStraight(driveSpeed);
     //printMessage("Straight", true);
   }
   else if (rightReflectance){
-    
+    digitalWrite(LED_BUILTIN,0);
     turn(RIGHT);
     //printMessage("Turn Right", true);
   }
   else if (leftReflectance){
+    digitalWrite(LED_BUILTIN,0);
     turn(LEFT);
     //printMessage("Turn Left", true);
   }
   else{
     turnWithReverse(lastSideOnTape);
+    digitalWrite(LED_BUILTIN,0);
     //turn(lastSideOnTape);
     // printMessage("OFF");
     // refreshDisplay();
@@ -247,11 +309,11 @@ void refreshDisplay(){
 
 void readTapeSensors(){
   //refreshDisplay();
-  tapeSensorThreahold = analogRead(TAPE_SENSOR_POT);
+  //tapeSensorThreahold = analogRead(TAPE_SENSOR_POT);
 
   rightReflectance = analogRead(RIGHT_TAPE_SENSOR) > tapeSensorThreahold;
   leftReflectance = analogRead(LEFT_TAPE_SENSOR) > tapeSensorThreahold;
-  printf("Threshhold %d\n Left %d\n right %d", tapeSensorThreahold,leftReflectance,rightReflectance);
+ // printf("Threshhold %d\n Left %d\n right %d", tapeSensorThreahold,leftReflectance,rightReflectance);
 
   if (rightReflectance && !leftReflectance){
     lastSideOnTape = RIGHT;
