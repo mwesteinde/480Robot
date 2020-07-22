@@ -30,9 +30,6 @@
 #define RIGHT 0
 #define LEFT 1
 
-#define RIGHT 0
-#define LEFT 1
-
 #define PWM_FREQUENCY 1000
 
 #define STOP 0
@@ -44,7 +41,7 @@
 
 
 
-//Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 void readCorrectionSpeed();
 void correctDirection();
@@ -90,10 +87,10 @@ void setup() {
   
   pinMode(COMBINE_MOTOR_FORWARD, OUTPUT);
 
-  //pinMode(DISPLAY_BUTTON, INPUT_PULLUP);
+  pinMode(DISPLAY_BUTTON, INPUT_PULLUP);
 
-  //display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  //display.display();
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.display();
   delay(2000);
   digitalWrite(LED_BUILTIN, 0);
   // display.clearDisplay();
