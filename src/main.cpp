@@ -22,7 +22,7 @@
 #define LEFT_MOTOR_FORWARD PA_1 //PWM
 #define RIGHT_MOTOR_FORWARD PA_0 //PWM
 
-#define REAR_SERVO PA_8 //PWM  //TODO: *Check the underscore in the pin name*
+#define REAR_SERVO PA_8 //PWM
 
 #define LEFT_MOTOR_REVERSE PB_8 //PWM
 #define RIGHT_MOTOR_REVERSE PB_9 //PWM
@@ -44,7 +44,7 @@
 
 
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+//Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 void readCorrectionSpeed();
 void correctDirection();
@@ -80,7 +80,7 @@ unsigned int driveSpeed;
 void setup() {
   // initialize LED digital pin as an output and set on
   pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(LED_BUILTIN, 0);
 
   pinMode(RIGHT_MOTOR_FORWARD, OUTPUT);
   pinMode(RIGHT_MOTOR_REVERSE, OUTPUT);
@@ -90,11 +90,12 @@ void setup() {
   
   pinMode(COMBINE_MOTOR_FORWARD, OUTPUT);
 
-  pinMode(DISPLAY_BUTTON, INPUT_PULLUP);
+  //pinMode(DISPLAY_BUTTON, INPUT_PULLUP);
 
   //display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   //display.display();
   delay(2000);
+  digitalWrite(LED_BUILTIN, 0);
   // display.clearDisplay();
   // display.setTextSize(2);
   // display.setTextColor(SSD1306_WHITE);
@@ -105,55 +106,34 @@ void setup() {
 
 void loop() {
   
-  
-
   if(startup){
     blink();
     callibrate();
     blink();
+    digitalWrite(LED_BUILTIN,0);
     test();
     startup = false;
-    printf("DONE CALLIBRATION\n TAPE IS: %d\n SURFACE IS: %d\n", tape, surface);
+    //printf("DONE CALLIBRATION\n TAPE IS: %d\n SURFACE IS: %d\n", tape, surface);
   }
-  // //correctDirectionPD();  
   readSpeeds();
   readTapeSensors();
-  //  correctDirectionPD();
-  printf("speed %d\nrighttape %d\nlefttape %d\n", correctingSpeed*100/512, rightReflectance, leftReflectance);
-  if (digitalRead(DISPLAY_BUTTON))
-  {
-    correctDirection();
-    pwm_start(COMBINE_MOTOR_FORWARD, PWM_FREQUENCY, driveSpeed/5, RESOLUTION_9B_COMPARE_FORMAT);
+  //printf("speed %d\nrighttape %d\nlefttape %d\n", correctingSpeed*100/512, rightReflectance, leftReflectance);
+  correctDirection();
+  pwm_start(COMBINE_MOTOR_FORWARD, PWM_FREQUENCY, driveSpeed/5, RESOLUTION_9B_COMPARE_FORMAT);
   
-  }
-  else{
-    driveStraight(STOP);
-    refreshDisplay();
-    printMessage(tapeSensorThreahold, true);
-    printMessage(analogRead(RIGHT_TAPE_SENSOR), false);
-    printMessage("   ", false);
-    printMessage(rightReflectance, true);
-    printMessage(analogRead(LEFT_TAPE_SENSOR), false);
-    printMessage("   ", false);
-    printMessage(leftReflectance, true);
-    printMessage(analogRead(CORRECTING_SPEED_POT), false);
-    printMessage("   ", false);
-    printMessage(correctingSpeed *100 / 512, true);
-    display.display();
-  }
 }
 
 void test(){
   
   readSpeeds();
   driveMotor(RIGHT,correctingSpeed,FORWARD);
-  digitalWrite(LED_BUILTIN,HIGH);
+  digitalWrite(LED_BUILTIN,LOW);
   delay(2000);
   driveMotor(RIGHT,driveSpeed,REVERSE);
   digitalWrite(LED_BUILTIN,0);
   delay(2000);
   driveMotor(LEFT,correctingSpeed,FORWARD);
-  digitalWrite(LED_BUILTIN,HIGH);
+  digitalWrite(LED_BUILTIN,LOW);
   delay(2000);
   driveMotor(LEFT,driveSpeed,REVERSE);
   digitalWrite(LED_BUILTIN,0);
@@ -176,7 +156,7 @@ void readCorrectionSpeed(){
 // creates a range of values that varies between surface and tape values due to addition of sensors.
 // Hope low 100 are all on surface and high 100 are all on tape. 
 // Creates tape sensor threshold which is the middle values between tape and surface. 
-// Robot will follow tape with one sensor on and one sensor off
+
 void callibrate(){
   int size = 5000;
   int sensorArray[size] = {};
@@ -223,7 +203,7 @@ void callibrate(){
 
 void blink(){
   for(int i = 0; i<5; i++){
-    digitalWrite(LED_BUILTIN,HIGH);
+    digitalWrite(LED_BUILTIN,LOW);
     delay(100);
     digitalWrite(LED_BUILTIN,0);
     delay(100);
@@ -258,7 +238,7 @@ void correctDirectionPD(){
 
 void correctDirection(){
   if(rightReflectance && leftReflectance){
-    digitalWrite(LED_BUILTIN,HIGH);
+    digitalWrite(LED_BUILTIN,LOW);
     driveStraight(driveSpeed);
     //printMessage("Straight", true);
   }
@@ -292,19 +272,19 @@ void printMessage(int message, bool newline){
 }
 
 void printMessage(String message, bool newline){
-   if (newline){
-    display.println(message);
-  }
-  else{
-    display.print(message);
-  }
+  //  if (newline){
+  //   display.println(message);
+  // }
+  // else{
+  //   display.print(message);
+  // }
 }
 
 void refreshDisplay(){
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0,0);
+  // display.clearDisplay();
+  // display.setTextSize(2);
+  // display.setTextColor(SSD1306_WHITE);
+  // display.setCursor(0,0);
 }
 
 void readTapeSensors(){
