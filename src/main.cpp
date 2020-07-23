@@ -22,6 +22,8 @@
 
 #define REAR_SERVO PA_8 //PWM
 
+#define MODE_SWITCH PB5 //DIGITAL
+
 #define LEFT_MOTOR_REVERSE PB_8 //PWM
 #define RIGHT_MOTOR_REVERSE PB_9 //PWM
 
@@ -33,6 +35,7 @@
 #define STOP 0
 #define FULL_SPEED 512
 #define ROTOR_SPEED 512 * 0.75
+#define PARTY_SPEED 512 * 0.75
 
 #define FORWARD 1
 #define REVERSE 0
@@ -42,6 +45,7 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+void partyMode();
 void moveServo(int);
 void countDown();
 void displayInfo();
@@ -79,11 +83,17 @@ void setup() {
 
   pinMode(DISPLAY_BUTTON, INPUT_PULLUP);
 
+  pinMode(MODE_SWITCH, INPUT_PULLUP);
+
   moveServo(UP_ANGLE);
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.display();
   refreshDisplay();
+
+  if(!digitalRead(MODE_SWITCH)){
+    partyMode();
+  }
 
   delay(1000);
   //countDown();
@@ -106,6 +116,13 @@ void loop() {
     displayInfo();
   }
   
+}
+
+void partyMode(){
+  turnRotor(PARTY_SPEED, FORWARD);
+  while (true){
+    //spin
+  }
 }
 
 void moveServo(int angle){
