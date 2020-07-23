@@ -40,9 +40,6 @@
 #define UP_ANGLE 90
 #define DOWN_ANGLE 38
 
-#define COUNTER_THRESHOLD 30000
-#define COUNTER_WAIT_AMOUNT 3000
-
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 void moveServo(int);
@@ -88,10 +85,10 @@ void setup() {
   display.display();
   refreshDisplay();
 
-  
-  countDown();
-  moveServo(DOWN_ANGLE);
   delay(1000);
+  //countDown();
+  moveServo(DOWN_ANGLE);
+  delay(100);
   }
 
 void loop() {
