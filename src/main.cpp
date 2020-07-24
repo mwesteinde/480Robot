@@ -35,7 +35,7 @@
 #define STOP 0
 #define FULL_SPEED 512
 #define ROTOR_SPEED 512 * 0.75
-#define PARTY_SPEED 512 * 0.75
+#define PARTY_SPEED 512
 
 #define FORWARD 1
 #define REVERSE 0
@@ -92,8 +92,16 @@ void setup() {
   refreshDisplay();
 
   if(!digitalRead(MODE_SWITCH)){
+    refreshDisplay();
+    printMessage("Party Mode", true);
+    display.display();
     partyMode();
+    //this spins - further code doesn't run
   }
+
+  refreshDisplay();
+  printMessage("Competition Mode", true);
+  display.display();
 
   delay(1000);
   //countDown();
@@ -119,9 +127,12 @@ void loop() {
 }
 
 void partyMode(){
-  turnRotor(PARTY_SPEED, FORWARD);
+
   while (true){
-    //spin
+    turnRotor(PARTY_SPEED, FORWARD);
+    delay(500);
+    turnRotor(STOP, FORWARD);
+    delay(3000);
   }
 }
 
