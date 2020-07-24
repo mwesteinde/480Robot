@@ -9,8 +9,8 @@
 #define tapel PA3 //right tape sensor
 #define taper PA2 //left tape sensor
 
-#define motorlb PB_0 //left motor forward
-#define motorlf PB_1 //left motor reverse
+#define motorlb PB_1 //left motor forward
+#define motorlf PB_0 //left motor reverse
 #define motorrb PA_6 //right motor forward
 #define motorrf PA_7 //right motor reverse
 
@@ -22,7 +22,7 @@
 
 #define startpin PB5
 
-#define maxspeed 1024 //max speed of motor
+#define maxspeed 900 //max speed of motor
 #define threshold 400 //tape on/off threshold
 #define rotorspeed 512
 
@@ -40,8 +40,9 @@ int speedr;
 bool lastonl;
 
 int halfspeed = maxspeed/2;
-int thirdspeed = -maxspeed;
-int fourthspeed = -maxspeed;
+int thirdspeed = maxspeed/3;
+int fourthspeed = 0;
+int fifthspeed = -maxspeed;
 //int i = 300;
 
 
@@ -97,19 +98,36 @@ void loop() {
 
   if (tapeonl && !tapeonr) {
     lastonl = true;
-    runmotors(halfspeed, maxspeed);
+    if (lastr) {
+      runmotors(halfspeed, maxspeed);
+    } else {
+      runmotors(thirdspeed, maxspeed);
+    }
+    
   }
 
   if (tapeonr && !tapeonl) {
     lastonl = false;
-    runmotors(maxspeed, halfspeed);
+    if (lastl) {
+      runmotors(maxspeed, halfspeed);
+    } else {
+      runmotors(maxspeed, thirdspeed);
+    }
   }
 
   if (!tapeonr && !tapeonl) {
     if (lastonl) {
-      runmotors(thirdspeed, maxspeed);
+      if (lastl) {
+        runmotors(fourthspeed, maxspeed);
+      } else {
+        runmotors(fifthspeed, maxspeed);
+      }
     } else {
-      runmotors(maxspeed, thirdspeed);
+      if (lastr) {
+        runmotors(maxspeed, fourthspeed);
+      } else {
+        runmotors(maxspeed, fifthspeed);
+      }
     }
   }
   if (digitalRead(startpin)) {
