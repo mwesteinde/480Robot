@@ -9,8 +9,8 @@
 #define tapel PA3 //right tape sensor
 #define taper PA2 //left tape sensor
 
-#define motorlb PB_1 //left motor forward
-#define motorlf PB_0 //left motor reverse
+#define motorlb PB_0 //left motor forward
+#define motorlf PB_1 //left motor reverse
 #define motorrb PA_6 //right motor forward
 #define motorrf PA_7 //right motor reverse
 
@@ -23,7 +23,7 @@
 #define startpin PB5
 
 #define maxspeed 1024 //max speed of motor
-#define threshold 200 //tape on/off threshold
+#define threshold 400 //tape on/off threshold
 #define rotorspeed 512
 
 bool tapeonl;
@@ -40,7 +40,7 @@ int speedr;
 bool lastonl;
 
 int halfspeed = maxspeed/2;
-int thirdspeed = 0;
+int thirdspeed = -maxspeed;
 int fourthspeed = -maxspeed;
 //int i = 300;
 
