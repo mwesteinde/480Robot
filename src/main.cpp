@@ -132,7 +132,7 @@ void partyMode(){
     turnRotor(PARTY_SPEED, FORWARD);
     delay(500);
     turnRotor(STOP, FORWARD);
-    delay(3000);
+    delay(7000);
   }
 }
 
