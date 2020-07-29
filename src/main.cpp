@@ -34,7 +34,7 @@
 
 #define STOP 0
 #define FULL_SPEED 512
-#define ROTOR_SPEED 512 * 0.75
+#define ROTOR_SPEED 512 * 0.70
 #define PARTY_SPEED 512
 
 #define FORWARD 1
