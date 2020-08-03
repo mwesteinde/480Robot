@@ -202,7 +202,7 @@ void loop() {
   driveSpeed = map(analogRead(DRIVE_SPEED_POT), 0, 1023, 0, FULL_SPEED);
   readCorrectionSpeed();
   readTapeSensors();
-  delay(5);
+  //delay(5);
   if (digitalRead(DISPLAY_BUTTON)){
     correctDirection();
     if (rotorCounter == 500){
@@ -334,11 +334,11 @@ void turn(int side){
   if (side == RIGHT) {
     
     driveMotor(LEFT, correctingSpeed, FORWARD);
-    driveMotor(RIGHT, STOP, FORWARD);
+    driveMotor(RIGHT, correctingSpeed*0.4, FORWARD);
   }
   else if (side == LEFT) {
     driveMotor(RIGHT, correctingSpeed, FORWARD);
-    driveMotor(LEFT, STOP, FORWARD);
+    driveMotor(LEFT, correctingSpeed*0.4, FORWARD);
   }
 }
 
