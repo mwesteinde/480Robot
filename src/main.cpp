@@ -38,7 +38,7 @@
 #define REVERSE 0
 
 #define UP_ANGLE 50
-#define DOWN_ANGLE 98
+#define DOWN_ANGLE 100
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -185,9 +185,14 @@ void setup() {
   display.display();
   refreshDisplay();
 
-  if(!digitalRead(DISPLAY_BUTTON)){
-    entertain();
+  printMessage("PRESS AND HOLD FOR COMPETITION\n",true);
+  printMessage("ClICK TO ENTERTAIN", true);
+  display.display();
+  while(digitalRead(DISPLAY_BUTTON)){
+
   }
+  delay(1000);
+  entertain();
   countDown();
   moveServo(DOWN_ANGLE);
   delay(1000);
@@ -205,18 +210,15 @@ void loop() {
   //delay(5);
   if (digitalRead(DISPLAY_BUTTON)){
     correctDirection();
-    if (rotorCounter == 500){
-      turnRotor(0, FORWARD);
-    }else if (rotorCounter == 1000){
-      rotorCounter = 0;
-    }else{
-      turnRotor(ROTOR_SPEED,FORWARD);
+    if (rotorCounter == 0){
+      turnRotor(ROTOR_SPEED, FORWARD);
+      rotorCounter = 1;
     }
-    rotorCounter++;
   }
-  else{
+   else{
     driveStraight(STOP);
     displayInfo();
+  
   }
   
 }
@@ -234,13 +236,13 @@ void countDown(){
   refreshDisplay();
   printMessage("3", true);
   display.display();
-  delay(1000);
+  delay(300);
   printMessage("2", true);
   display.display();
-  delay(1000);
+  delay(300);
   printMessage("1", true);
   display.display();
-  delay(1000);
+  delay(300);
   printMessage("Starting", true);
   display.display();
 }
@@ -249,7 +251,7 @@ void entertain(){
   refreshDisplay();
   printMessage("ENTERTAIN",true);
   display.display();
-  while (true){
+  while (digitalRead(DISPLAY_BUTTON)){
     turnRotor(FULL_SPEED, FORWARD);
     delay(500);
     turnRotor(STOP, FORWARD);
@@ -315,12 +317,13 @@ void readTapeSensors(){
   tapeSensorThreahold = analogRead(TAPE_SENSOR_POT);
   int r = 0;
   int l = 0;
-for (int count = 0; count < 10; count++){
+  int number = 1;
+for (int count = 0; count < number; count++){
     r+= analogRead(RIGHT_TAPE_SENSOR);
     l+= analogRead(LEFT_TAPE_SENSOR);
 }
-  rightReflectance = r/10 > tapeSensorThreahold;
-  leftReflectance = l/10 > tapeSensorThreahold;
+  rightReflectance = r/number > tapeSensorThreahold;
+  leftReflectance = l/number > tapeSensorThreahold;
 
   if (rightReflectance && !leftReflectance){
     lastSideOnTape = RIGHT;
@@ -334,11 +337,11 @@ void turn(int side){
   if (side == RIGHT) {
     
     driveMotor(LEFT, correctingSpeed, FORWARD);
-    driveMotor(RIGHT, correctingSpeed*0.4, FORWARD);
+    driveMotor(RIGHT, STOP, FORWARD);
   }
   else if (side == LEFT) {
     driveMotor(RIGHT, correctingSpeed, FORWARD);
-    driveMotor(LEFT, correctingSpeed*0.4, FORWARD);
+    driveMotor(LEFT, STOP, FORWARD);
   }
 }
 
