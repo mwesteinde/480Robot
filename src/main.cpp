@@ -25,7 +25,8 @@
 #define correctingspeed PA0
 #define turnspeed PA1
 
-#define maxspeed 512 //max speed of motor
+#define maxspeed 511 //max speed of motor
+#define maxspeedl 511
 #define max2 400
 #define threshold 400 //tape on/off threshold
 #define rotorspeed 350
@@ -50,7 +51,11 @@ bool lastonl;
 int halfspeed = maxspeed - 150;
 int thirdspeed = maxspeed/2;
 int fourthspeed = 0;
-int fifthspeed = -maxspeed - 150;
+int fifthspeed = -(maxspeed - 100);
+int halfspeedl = maxspeedl - 200;
+int thirdspeedl = maxspeedl/3;
+int fourthspeedl = 0;
+int fifthspeedl = -(maxspeedl - 100);
 //int i = 300;
 
 
@@ -62,6 +67,7 @@ void hitchcontrol(int angle);
 void partymode();
 void ballrelease();
 void shoot();
+void movebot(int timel, int timer);
 
 
 void setup() {
@@ -84,27 +90,53 @@ void setup() {
     while(digitalRead(displayswitch)) {
     }
     pinMode(correctingspeed, INPUT_ANALOG);
+    display.clearDisplay();
+    display.println("Partayyyy");
+    display.display();
+    hitchcontrol(180);
     partymode();
   }
   hitchcontrol(180);
   if(digitalRead(startpin)) {
     display.clearDisplay();
-    display.println("Ready2Rumble");
+    display.println("Hitch Test");
     display.display();
     while (digitalRead(displayswitch)) {
       hitchcontrol(180);
       delay(20);
     } 
+    hitchcontrol(130);
+    delay(1000);
+    hitchcontrol(180);
+    display.clearDisplay();
+    display.println("Ready2Rumble");
+    display.display();
+    while (digitalRead(displayswitch)) {
+      hitchcontrol(180);
+      delay(50);
+    } 
     display.clearDisplay();
     display.println("Run Forrest!");
     display.display();
   }
-  attachInterrupt(digitalPinToInterrupt(displayswitch), showvalues, FALLING);
-  //delay(1000);
   hitchcontrol(130);
   delay(500);
+  attachInterrupt(digitalPinToInterrupt(displayswitch), showvalues, FALLING);
   pwm_start(rotor, 1024, rotorspeed, RESOLUTION_9B_COMPARE_FORMAT);
+  pwm_start(motorlf, 512, 512, RESOLUTION_9B_COMPARE_FORMAT);
+  pwm_start(motorrf, 512, 512, RESOLUTION_9B_COMPARE_FORMAT);
+  pinMode(correctingspeed, INPUT_ANALOG);
 }
+
+/*void loop() {
+  int speed = map(analogRead(correctingspeed), 0, 1024, 0, 512);
+  pwm_start(motorlf, 512, speed, RESOLUTION_9B_COMPARE_FORMAT);
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.println(speed);
+  display.display();
+  delay(1000);
+}*/
 
 
 void loop() {
@@ -129,15 +161,15 @@ void loop() {
   }
 
   if (tapeonl && tapeonr) {
-    runmotors(maxspeed, maxspeed);
+    runmotors(maxspeedl, maxspeed);
   }
 
   if (tapeonl && !tapeonr) {
     lastonl = true;
     if (lastr) {
-      runmotors(thirdspeed, maxspeed);
+      runmotors(thirdspeedl, maxspeed);
     } else {
-      runmotors(halfspeed, maxspeed);
+      runmotors(halfspeedl, maxspeed);
     }
     
   }
@@ -145,22 +177,22 @@ void loop() {
   if (tapeonr && !tapeonl) {
     lastonl = false;
     if (lastl) {
-      runmotors(maxspeed, thirdspeed);
+      runmotors(maxspeedl, thirdspeed);
     } else {
-      runmotors(maxspeed, halfspeed);
+      runmotors(maxspeedl, halfspeed);
     }
   }
 
   if (!tapeonr && !tapeonl) {
     if (lastonl) {
       if (lastl) {
-        runmotors(fourthspeed, maxspeed);
+        runmotors(fourthspeedl, maxspeed);
       } else {
-        runmotors(fifthspeed, maxspeed);
+        runmotors(fifthspeedl, maxspeed);
       }
     } else {
       if (lastr) {
-        runmotors(maxspeed, fourthspeed);
+        runmotors(maxspeedl, fourthspeed);
       } else {
         runmotors(maxspeed, fifthspeed);
       }
@@ -203,34 +235,74 @@ void showvalues() {
   display.println(analogRead(tapel));
   display.print("right: ");
   display.println(analogRead(taper));
-
   display.display();
 }
 
 void partymode() {
-  while(true) {
     ballrelease();
     delay(500);
-    pwm_start(rotor, 512, 512, RESOLUTION_9B_COMPARE_FORMAT);
-    delay(300);
-    pwm_start(rotor, 512, STOP, RESOLUTION_9B_COMPARE_FORMAT);
+    ballrelease();
+    delay(3000);
+    shoot();
+    delay(500);
+    ballrelease();
+    delay(3000);
+    shoot();
+    delay(500);
+    movebot(600, 350);
+    ballrelease();
+    delay(3000);
+    shoot();
+    delay(500);
+    ballrelease();
+    delay(3000);
+    shoot();
+    delay(500);
+    movebot(-250, 250);
+    ballrelease();
+    delay(3000);
+    shoot();
+    delay(500);
+    ballrelease();
+    delay(3000);
+    shoot();
     delay(500);
   }
-}
+
 
 void shoot() {
+  pwm_start(rotor, 512, 512, RESOLUTION_9B_COMPARE_FORMAT);
+  delay(440);
+  pwm_start(rotor, 512, STOP, RESOLUTION_9B_COMPARE_FORMAT);
+
+}
+
+void movebot(int timel, int timer) {
+  if (timel > 0) {
+    pwm_start(motorlb, 512, 400, RESOLUTION_9B_COMPARE_FORMAT);
+    delay(timel);
+    pwm_start(motorlb, 512, STOP, RESOLUTION_9B_COMPARE_FORMAT);
+  } else {
+    pwm_start(motorlf, 512, 400, RESOLUTION_9B_COMPARE_FORMAT);
+    delay(-timel);
+    pwm_start(motorlf, 512, STOP, RESOLUTION_9B_COMPARE_FORMAT);
+  }
+  if (timer > 0) {
+   pwm_start(motorrb, 512, 400, RESOLUTION_9B_COMPARE_FORMAT);
+   delay(timer);
+   pwm_start(motorrb, 512, STOP, RESOLUTION_9B_COMPARE_FORMAT);
+  } else {
+    pwm_start(motorrf, 512, 400, RESOLUTION_9B_COMPARE_FORMAT);
+   delay(-timer);
+   pwm_start(motorrf, 512, STOP, RESOLUTION_9B_COMPARE_FORMAT);
+  }
+
 
 }
 
 void ballrelease() {
-  //int pwmsignal = map(660, 0, 1024, 500, 2500);
   pwm_start(ballservo, 50, 1600, TimerCompareFormat_t::MICROSEC_COMPARE_FORMAT);
-  /*display.clearDisplay();
-  display.setCursor(0,0);
-  display.println(analogRead(correctingspeed));
-  display.display();*/
-  delay(98);
+  delay(99);
   pwm_start(ballservo, 50, 2500, TimerCompareFormat_t::MICROSEC_COMPARE_FORMAT);
-  delay(3000);
 }
 
